@@ -24,8 +24,11 @@ export const metadata: Metadata = {
     title: "Coffee Garden",
   },
   icons: {
-    icon: "/icons/logo.png",
-    apple: "/icons/logo.png",
+    icon: [
+      { url: "/icons/logo-192.png", sizes: "192x192", type: "image/png" },
+      { url: "/icons/logo-512.png", sizes: "512x512", type: "image/png" },
+    ],
+    apple: "/icons/logo-apple.png",
   },
 };
 

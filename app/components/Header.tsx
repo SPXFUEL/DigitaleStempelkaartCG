@@ -7,10 +7,10 @@ export default function Header({ subtitle }: { subtitle?: string }) {
     <header className="px-5 pt-6 pb-4 flex flex-col items-center text-center">
       <Link href="/" className="inline-flex flex-col items-center gap-1.5">
         <Image
-          src="/icons/logo.png"
+          src="/icons/logo-192.png"
           alt={BRAND_NAME}
-          width={128}
-          height={128}
+          width={192}
+          height={192}
           priority
           className="h-20 w-20 sm:h-24 sm:w-24 object-contain"
         />

@@ -88,8 +88,13 @@ lib/
   session.ts                 cookie helpers (klant + staff)
 public/
   manifest.webmanifest       PWA-manifest
-  icons/icon.svg             app-icoon (vervang door PNG voor iOS-homescreen)
+  icons/logo.png             source logo (2000x2000, ~2MB) — bron voor de iconen
+  icons/logo-192.png         PWA-icoon 192x192 (~10KB)
+  icons/logo-512.png         PWA-icoon 512x512 + maskable (~58KB)
+  icons/logo-apple.png       Apple touch icon 180x180 (~9KB)
   sw.js                      service worker
+scripts/
+  gen-icons.mjs              herresize logo.png naar de drie PNG-formaten (npm run gen-icons)
 ```
 
 ## Productie-checklist
@@ -103,8 +108,8 @@ Voor je dit in een echte coffee shop gebruikt:
   - tabel `customers (id uuid, name text, email text, stamps int, total_drinks int, total_rewards int, reward_available bool, created_at timestamptz, updated_at timestamptz)`
   - tabel `stamp_events (id bigint, customer_id uuid, type text, at timestamptz)`
   - Service-role-key voor server-side schrijven, RLS aan
-- [ ] **Icons** — vervang `public/icons/icon.svg` door echte 192 + 512 PNG's
-  (apple-touch-icon, maskable). Tip: https://realfavicongenerator.net
+- [x] **Icons** — Coffee Garden logo is geïntegreerd. Bij logo-wijziging: vervang
+  `public/icons/logo.png` en run `npm run gen-icons` om de 192/512/apple varianten te herresizen.
 - [ ] **QR-code aan de toonbank** — laat een sticker/A6-kaartje drukken met een QR die naar je root-URL wijst.
 - [ ] **Privacy-statement** — voeg een `/privacy` pagina toe die uitlegt welke
   data jullie opslaan (voornaam, optioneel e-mail, stempel-geschiedenis).
