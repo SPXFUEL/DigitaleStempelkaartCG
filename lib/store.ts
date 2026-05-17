@@ -59,7 +59,7 @@ export async function createCustomer(input: {
     name: input.name.trim(),
     email: input.email?.trim() || undefined,
     stamps: 0,
-    totalCoffees: 0,
+    totalDrinks: 0,
     totalRewards: 0,
     rewardAvailable: false,
     createdAt: nowIso(),
@@ -92,7 +92,7 @@ export async function addStamp(customerId: string): Promise<Customer> {
     throw new Error("Reward beschikbaar — eerst inwisselen");
   }
   customer.stamps += 1;
-  customer.totalCoffees += 1;
+  customer.totalDrinks += 1;
   customer.updatedAt = nowIso();
   if (customer.stamps >= STAMPS_FOR_REWARD) {
     customer.rewardAvailable = true;
@@ -114,7 +114,7 @@ export async function redeemReward(customerId: string): Promise<Customer> {
   customer.stamps = 0;
   customer.rewardAvailable = false;
   customer.totalRewards += 1;
-  customer.totalCoffees += 1;
+  customer.totalDrinks += 1;
   customer.updatedAt = nowIso();
   memoryStore.events.push({ customerId, type: "redeem", at: customer.updatedAt });
   await persist();

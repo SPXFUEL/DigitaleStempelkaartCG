@@ -1,43 +1,27 @@
 import Link from "next/link";
+import Image from "next/image";
 import { BRAND_NAME } from "@/lib/constants";
 
 export default function Header({ subtitle }: { subtitle?: string }) {
   return (
-    <header className="px-5 pt-8 pb-4">
-      <Link href="/" className="inline-flex items-center gap-2.5">
-        <span
-          aria-hidden
-          className="inline-flex h-10 w-10 items-center justify-center rounded-full"
-          style={{ background: "var(--cg-coffee)" }}
-        >
-          <svg
-            viewBox="0 0 24 24"
-            width="22"
-            height="22"
-            fill="none"
-            stroke="#fff"
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          >
-            <path d="M17 8h1a4 4 0 0 1 0 8h-1" />
-            <path d="M3 8h14v9a4 4 0 0 1-4 4H7a4 4 0 0 1-4-4Z" />
-            <path d="M6 2v3M10 2v3M14 2v3" />
-          </svg>
-        </span>
-        <span className="flex flex-col leading-tight">
+    <header className="px-5 pt-6 pb-4 flex flex-col items-center text-center">
+      <Link href="/" className="inline-flex flex-col items-center gap-1.5">
+        <Image
+          src="/icons/logo.png"
+          alt={BRAND_NAME}
+          width={128}
+          height={128}
+          priority
+          className="h-20 w-20 sm:h-24 sm:w-24 object-contain"
+        />
+        {subtitle && (
           <span
-            className="text-lg font-semibold tracking-tight"
-            style={{ color: "var(--cg-coffee-dark)" }}
+            className="text-xs uppercase tracking-wider"
+            style={{ color: "var(--cg-leaf-dark)" }}
           >
-            {BRAND_NAME}
+            {subtitle}
           </span>
-          {subtitle && (
-            <span className="text-xs" style={{ color: "var(--cg-ink-soft)" }}>
-              {subtitle}
-            </span>
-          )}
-        </span>
+        )}
       </Link>
     </header>
   );

@@ -1,7 +1,7 @@
 # Coffee Garden — Digitale Stempelkaart
 
-Een no-install web-stempelkaart voor [Coffee Garden](https://www.coffeegarden.nl).
-Elke **8e koffie gratis** — klanten scannen één keer een QR aan de toonbank,
+Een no-install web-stempelkaart voor [Coffee Garden](https://www.coffeegarden.nl) — speciaalzaak in koffie en thee.
+Elk **8e drankje gratis** (koffie, thee of special) — klanten scannen één keer een QR aan de toonbank,
 slaan de kaart op als web-app op hun beginscherm, en de barista zet stempels
 door een eigen QR te scannen.
 
@@ -45,7 +45,7 @@ Open http://localhost:3000
    uitgelegd, Android krijgt een browser-prompt).
 3. Na aanmelden krijgt de klant een unieke `cg:cust:<uuid>` QR-code op `/profiel`.
 4. Aan de toonbank scant de barista deze QR via `/staff` → één tap "Stempel +1".
-5. Bij 7 stempels licht de kaart op met "🎉 Je volgende koffie is gratis".
+5. Bij 7 stempels licht de kaart op met "🎉 Je volgende drankje is gratis".
    Barista tikt op "Inwisselen", kaart reset naar 0.
 
 ## Belangrijke design-keuzes
@@ -71,7 +71,7 @@ app/
   api/
     enroll/route.ts          POST — klant aanmaken + cookie zetten
     stamp/route.ts           POST — stempel +1 (staff-auth vereist)
-    redeem/route.ts          POST — gratis koffie inwisselen
+    redeem/route.ts          POST — gratis drankje inwisselen
     staff/login/route.ts     POST — PIN-check, set staff-cookie
     staff/logout/route.ts    POST — clear cookie
     staff/customer/[id]/route.ts  GET — klant-lookup voor staff
@@ -100,7 +100,7 @@ Voor je dit in een echte coffee shop gebruikt:
 - [ ] **HTTPS** — vereist voor camera-API én voor PWA-installatie
 - [ ] **Apple/Google Wallet** integratie afmaken (zie roadmap)
 - [ ] **Database** — JSON-file werkt niet op serverless (Vercel/Netlify wissen `/data` per deploy en runs zijn ephemeral). Implementeer Supabase:
-  - tabel `customers (id uuid, name text, email text, stamps int, total_coffees int, total_rewards int, reward_available bool, created_at timestamptz, updated_at timestamptz)`
+  - tabel `customers (id uuid, name text, email text, stamps int, total_drinks int, total_rewards int, reward_available bool, created_at timestamptz, updated_at timestamptz)`
   - tabel `stamp_events (id bigint, customer_id uuid, type text, at timestamptz)`
   - Service-role-key voor server-side schrijven, RLS aan
 - [ ] **Icons** — vervang `public/icons/icon.svg` door echte 192 + 512 PNG's
@@ -123,7 +123,7 @@ Voor je dit in een echte coffee shop gebruikt:
 - E-mail magic-link login zodat klant op meerdere apparaten kan inloggen
 
 ### Fase 4 — Nice-to-haves
-- Push-notificaties ("Je hebt 5 stempels — nog 2 voor gratis koffie!")
+- Push-notificaties ("Je hebt 5 stempels — nog 2 voor gratis drankje!")
 - Verwijzingen ("Nodig een vriend uit, krijg samen een stempel")
 - Inzichten-dashboard voor jullie (drukke uren, retentie, …)
 

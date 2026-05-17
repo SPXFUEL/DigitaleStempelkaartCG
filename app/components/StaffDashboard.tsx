@@ -108,7 +108,7 @@ export default function StaffDashboard({ recent }: { recent: Customer[] }) {
       flash({
         kind: "ok",
         text: data.customer.rewardAvailable
-          ? `${data.customer.name}: kaart vol — gratis koffie!`
+          ? `${data.customer.name}: kaart vol — gratis drankje!`
           : `${data.customer.name}: ${data.customer.stamps}/${STAMPS_FOR_REWARD}`,
       });
       router.refresh();
@@ -132,7 +132,7 @@ export default function StaffDashboard({ recent }: { recent: Customer[] }) {
         return;
       }
       setSelected(data.customer);
-      flash({ kind: "ok", text: `Gratis koffie voor ${data.customer.name}!` });
+      flash({ kind: "ok", text: `Gratis drankje voor ${data.customer.name}!` });
       router.refresh();
     } finally {
       setBusy(false);
@@ -241,7 +241,7 @@ export default function StaffDashboard({ recent }: { recent: Customer[] }) {
                 className="text-xs font-mono"
                 style={{ color: "var(--cg-ink-soft)" }}
               >
-                {selected.id.slice(0, 8)} · {selected.totalCoffees} koffies totaal
+                {selected.id.slice(0, 8)} · {selected.totalDrinks} drankjes totaal
               </p>
             </div>
             <button
@@ -273,7 +273,7 @@ export default function StaffDashboard({ recent }: { recent: Customer[] }) {
                 onClick={handleRedeem}
                 style={{ background: "var(--cg-leaf)" }}
               >
-                {busy ? "Bezig…" : "🎉 Gratis koffie inwisselen"}
+                {busy ? "Bezig…" : "🎉 Gratis drankje inwisselen"}
               </button>
             ) : (
               <button
@@ -326,7 +326,7 @@ export default function StaffDashboard({ recent }: { recent: Customer[] }) {
                     style={{ color: "var(--cg-ink-soft)" }}
                   >
                     {c.stamps}/{STAMPS_FOR_REWARD}
-                    {c.rewardAvailable && " · gratis koffie klaar"}
+                    {c.rewardAvailable && " · gratis drankje klaar"}
                   </div>
                 </div>
                 <button

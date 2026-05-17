@@ -22,8 +22,9 @@ export default async function WelkomPage() {
             Welkom bij {BRAND_NAME}
           </h1>
           <p className="mt-2 text-sm" style={{ color: "var(--cg-ink-soft)" }}>
-            Spaar bij elke koffie een stempel. Bij <strong>{STAMPS_FOR_REWARD} stempels</strong>
-            {" "}is je <strong>volgende koffie gratis</strong>.
+            Spaar bij elk drankje een stempel — koffie, thee of een special.
+            Bij <strong>{STAMPS_FOR_REWARD} stempels</strong> is je{" "}
+            <strong>volgende drankje gratis</strong>.
           </p>
           <ul
             className="mt-4 space-y-2 text-sm"

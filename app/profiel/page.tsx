@@ -68,19 +68,19 @@ export default async function ProfielPage() {
               className="text-base font-semibold"
               style={{ color: "var(--cg-coffee-dark)" }}
             >
-              🎉 Je volgende koffie is gratis!
+              🎉 Je volgende drankje is gratis!
             </p>
             <p className="text-sm mt-1" style={{ color: "var(--cg-ink-soft)" }}>
-              Laat je QR aan de barista zien om je gratis koffie in te wisselen.
+              Laat je QR aan de barista zien om in te wisselen.
             </p>
           </section>
         ) : (
           <section className="cg-card p-5">
             <p className="text-sm" style={{ color: "var(--cg-ink-soft)" }}>
-              Nog <strong>{remaining} {remaining === 1 ? "stempel" : "stempels"}</strong> tot je gratis koffie.
+              Nog <strong>{remaining} {remaining === 1 ? "stempel" : "stempels"}</strong> tot je gratis drankje.
             </p>
             <p className="text-xs mt-2" style={{ color: "var(--cg-ink-soft)" }}>
-              Totaal koffies bij {BRAND_NAME}: {customer.totalCoffees} · gratis ingewisseld: {customer.totalRewards}
+              Totaal bij {BRAND_NAME}: {customer.totalDrinks} drankjes · gratis ingewisseld: {customer.totalRewards}
             </p>
           </section>
         )}

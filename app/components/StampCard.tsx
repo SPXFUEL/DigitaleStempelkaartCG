@@ -19,7 +19,7 @@ export default function StampCard({
         </h2>
         <span className="text-sm" style={{ color: "var(--cg-ink-soft)" }}>
           {rewardAvailable
-            ? "Klaar voor gratis koffie!"
+            ? "Klaar voor gratis drankje!"
             : `${stamps} / ${STAMPS_FOR_REWARD}`}
         </span>
       </div>
@@ -32,7 +32,7 @@ export default function StampCard({
               <div
                 key={n}
                 className={`cg-stamp ${rewardAvailable ? "cg-stamp--reward" : ""}`}
-                aria-label="Gratis koffie"
+                aria-label="Gratis drankje"
               >
                 {rewardAvailable ? "GRATIS" : "★"}
               </div>

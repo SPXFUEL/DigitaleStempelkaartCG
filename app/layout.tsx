@@ -16,7 +16,7 @@ const geistMono = Geist_Mono({
 export const metadata: Metadata = {
   title: "Coffee Garden — Stempelkaart",
   description:
-    "Spaar voor een gratis koffie bij Coffee Garden. Geen app-installatie nodig.",
+    "Spaar voor een gratis drankje bij Coffee Garden. Geen app-installatie nodig.",
   manifest: "/manifest.webmanifest",
   appleWebApp: {
     capable: true,
@@ -24,8 +24,8 @@ export const metadata: Metadata = {
     title: "Coffee Garden",
   },
   icons: {
-    icon: "/icons/icon-192.png",
-    apple: "/icons/apple-touch-icon.png",
+    icon: "/icons/logo.png",
+    apple: "/icons/logo.png",
   },
 };
 

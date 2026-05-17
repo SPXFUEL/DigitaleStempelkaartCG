@@ -3,7 +3,7 @@ export interface Customer {
   name: string;
   email?: string;
   stamps: number;
-  totalCoffees: number;
+  totalDrinks: number;
   totalRewards: number;
   rewardAvailable: boolean;
   createdAt: string;
