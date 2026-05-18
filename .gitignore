@@ -44,3 +44,5 @@ next-env.d.ts
 # coffee garden runtime data (JSON store for demo mode)
 /data/store.json
 /data/*.json
+
+.vercel
