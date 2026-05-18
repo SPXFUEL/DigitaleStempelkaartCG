@@ -6,6 +6,7 @@ import { isBirthdayActive, currentYearInAms } from "./birthday";
 import type {
   Customer,
   CustomerRecord,
+  PushSubscriptionRecord,
   StampEvent,
   StoreShape,
 } from "./types";
@@ -13,7 +14,11 @@ import type {
 const DATA_DIR = path.join(process.cwd(), "data");
 const STORE_FILE = path.join(DATA_DIR, "store.json");
 
-const memoryStore: StoreShape = { customers: {}, events: [] };
+const memoryStore: StoreShape = {
+  customers: {},
+  events: [],
+  pushSubscriptions: [],
+};
 let loaded = false;
 let writeQueue: Promise<void> = Promise.resolve();
 
@@ -25,6 +30,7 @@ async function ensureLoaded(): Promise<void> {
     const parsed = JSON.parse(raw) as StoreShape;
     memoryStore.customers = parsed.customers ?? {};
     memoryStore.events = parsed.events ?? [];
+    memoryStore.pushSubscriptions = parsed.pushSubscriptions ?? [];
   } catch (err: unknown) {
     if (
       typeof err === "object" &&
@@ -146,6 +152,13 @@ export async function listCustomersWithBirthday(): Promise<Customer[]> {
     .map(toCustomer);
 }
 
+export async function listCustomersWithRewardAvailable(): Promise<Customer[]> {
+  await ensureLoaded();
+  return Object.values(memoryStore.customers)
+    .filter((r) => r.rewardAvailable)
+    .map(toCustomer);
+}
+
 export async function addStamp(customerId: string): Promise<Customer> {
   await ensureLoaded();
   const rec = memoryStore.customers[customerId];
@@ -185,6 +198,53 @@ export async function redeemReward(customerId: string): Promise<Customer> {
   });
   await persist();
   return toCustomer(rec);
+}
+
+export async function savePushSubscription(
+  sub: PushSubscriptionRecord
+): Promise<void> {
+  await ensureLoaded();
+  const list = memoryStore.pushSubscriptions ?? [];
+  // Upsert by endpoint
+  const existing = list.findIndex((s) => s.endpoint === sub.endpoint);
+  if (existing >= 0) {
+    list[existing] = { ...list[existing], ...sub };
+  } else {
+    list.push({ ...sub, failureCount: 0 });
+  }
+  memoryStore.pushSubscriptions = list;
+  await persist();
+}
+
+export async function removePushSubscription(endpoint: string): Promise<void> {
+  await ensureLoaded();
+  const list = memoryStore.pushSubscriptions ?? [];
+  memoryStore.pushSubscriptions = list.filter((s) => s.endpoint !== endpoint);
+  await persist();
+}
+
+export async function listPushSubscriptionsForCustomer(
+  customerId: string
+): Promise<PushSubscriptionRecord[]> {
+  await ensureLoaded();
+  return (memoryStore.pushSubscriptions ?? []).filter(
+    (s) => s.customerId === customerId && s.failureCount < 5
+  );
+}
+
+export async function markPushSubscriptionFailure(
+  endpoint: string,
+  remove: boolean
+): Promise<void> {
+  await ensureLoaded();
+  const list = memoryStore.pushSubscriptions ?? [];
+  if (remove) {
+    memoryStore.pushSubscriptions = list.filter((s) => s.endpoint !== endpoint);
+  } else {
+    const sub = list.find((s) => s.endpoint === endpoint);
+    if (sub) sub.failureCount += 1;
+  }
+  await persist();
 }
 
 export async function redeemBirthday(customerId: string): Promise<Customer> {

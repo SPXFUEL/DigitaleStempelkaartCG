@@ -20,9 +20,20 @@ export interface StampEvent {
   at: string;
 }
 
+export interface PushSubscriptionRecord {
+  id?: number;
+  customerId: string;
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+  userAgent?: string;
+  failureCount: number;
+}
+
 export interface StoreShape {
   customers: Record<string, CustomerRecord>;
   events: StampEvent[];
+  pushSubscriptions?: PushSubscriptionRecord[];
 }
 
 /** Raw customer zoals opgeslagen in de file-store (zonder computed velden) */

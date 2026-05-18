@@ -7,6 +7,7 @@ import InstallPWA from "@/app/components/InstallPWA";
 import BirthdayBanner from "@/app/components/BirthdayBanner";
 import StatsCard from "@/app/components/StatsCard";
 import MilestoneCelebration from "@/app/components/MilestoneCelebration";
+import PushToggle from "@/app/components/PushToggle";
 import { getCustomerCookie } from "@/lib/session";
 import { getCustomer, getCustomerEvents } from "@/lib/store";
 import { STAMPS_FOR_REWARD } from "@/lib/constants";
@@ -107,6 +108,8 @@ export default async function ProfielPage() {
         <StatsCard stats={stats} />
 
         <InstallPWA />
+
+        <PushToggle />
       </main>
     </div>
   );

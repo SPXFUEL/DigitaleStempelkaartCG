@@ -9,7 +9,7 @@
  */
 
 import { isSupabaseConfigured } from "./supabase";
-import type { Customer, StampEvent } from "./types";
+import type { Customer, PushSubscriptionRecord, StampEvent } from "./types";
 
 import * as fileStore from "./store-file";
 import * as supaStore from "./store-supabase";
@@ -57,6 +57,10 @@ export function listCustomersWithBirthday(): Promise<Customer[]> {
   return backend.listCustomersWithBirthday();
 }
 
+export function listCustomersWithRewardAvailable(): Promise<Customer[]> {
+  return backend.listCustomersWithRewardAvailable();
+}
+
 export function addStamp(customerId: string): Promise<Customer> {
   return backend.addStamp(customerId);
 }
@@ -67,4 +71,27 @@ export function redeemReward(customerId: string): Promise<Customer> {
 
 export function redeemBirthday(customerId: string): Promise<Customer> {
   return backend.redeemBirthday(customerId);
+}
+
+export function savePushSubscription(
+  sub: PushSubscriptionRecord
+): Promise<void> {
+  return backend.savePushSubscription(sub);
+}
+
+export function removePushSubscription(endpoint: string): Promise<void> {
+  return backend.removePushSubscription(endpoint);
+}
+
+export function listPushSubscriptionsForCustomer(
+  customerId: string
+): Promise<PushSubscriptionRecord[]> {
+  return backend.listPushSubscriptionsForCustomer(customerId);
+}
+
+export function markPushSubscriptionFailure(
+  endpoint: string,
+  remove: boolean
+): Promise<void> {
+  return backend.markPushSubscriptionFailure(endpoint, remove);
 }

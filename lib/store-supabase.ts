@@ -1,7 +1,11 @@
 import { STAMPS_FOR_REWARD } from "./constants";
 import { getServiceClient } from "./supabase";
 import { isBirthdayActive, currentYearInAms } from "./birthday";
-import type { Customer, StampEvent } from "./types";
+import type {
+  Customer,
+  PushSubscriptionRecord,
+  StampEvent,
+} from "./types";
 
 type CustomerRow = {
   id: string;
@@ -157,6 +161,17 @@ export async function listCustomersWithBirthday(): Promise<Customer[]> {
   return (data ?? []).map(fromDb);
 }
 
+export async function listCustomersWithRewardAvailable(): Promise<Customer[]> {
+  const sb = client();
+  const { data, error } = await sb
+    .from("customers")
+    .select()
+    .eq("reward_available", true)
+    .returns<CustomerRow[]>();
+  if (error) throw new Error(error.message);
+  return (data ?? []).map(fromDb);
+}
+
 export async function addStamp(customerId: string): Promise<Customer> {
   const sb = client();
   const { data: current, error: fetchErr } = await sb
@@ -231,6 +246,97 @@ export async function redeemReward(customerId: string): Promise<Customer> {
     .then(() => {});
 
   return fromDb(updated);
+}
+
+type PushSubRow = {
+  id: number;
+  customer_id: string;
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+  user_agent: string | null;
+  failure_count: number;
+};
+
+export async function savePushSubscription(
+  sub: PushSubscriptionRecord
+): Promise<void> {
+  const sb = client();
+  const { error } = await sb
+    .from("push_subscriptions")
+    .upsert(
+      {
+        customer_id: sub.customerId,
+        endpoint: sub.endpoint,
+        p256dh: sub.p256dh,
+        auth: sub.auth,
+        user_agent: sub.userAgent ?? null,
+        failure_count: 0,
+      },
+      { onConflict: "endpoint" }
+    );
+  if (error) throw new Error(error.message);
+}
+
+export async function removePushSubscription(endpoint: string): Promise<void> {
+  const sb = client();
+  const { error } = await sb
+    .from("push_subscriptions")
+    .delete()
+    .eq("endpoint", endpoint);
+  if (error) throw new Error(error.message);
+}
+
+export async function listPushSubscriptionsForCustomer(
+  customerId: string
+): Promise<PushSubscriptionRecord[]> {
+  const sb = client();
+  const { data, error } = await sb
+    .from("push_subscriptions")
+    .select()
+    .eq("customer_id", customerId)
+    .lt("failure_count", 5)
+    .returns<PushSubRow[]>();
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((r) => ({
+    id: r.id,
+    customerId: r.customer_id,
+    endpoint: r.endpoint,
+    p256dh: r.p256dh,
+    auth: r.auth,
+    userAgent: r.user_agent ?? undefined,
+    failureCount: r.failure_count,
+  }));
+}
+
+export async function markPushSubscriptionFailure(
+  endpoint: string,
+  remove: boolean
+): Promise<void> {
+  const sb = client();
+  if (remove) {
+    const { error } = await sb
+      .from("push_subscriptions")
+      .delete()
+      .eq("endpoint", endpoint);
+    if (error) throw new Error(error.message);
+  } else {
+    // Fetch current count, increment
+    const { data } = await sb
+      .from("push_subscriptions")
+      .select("failure_count")
+      .eq("endpoint", endpoint)
+      .maybeSingle<{ failure_count: number }>();
+    if (data) {
+      await sb
+        .from("push_subscriptions")
+        .update({
+          failure_count: data.failure_count + 1,
+          last_failure_at: new Date().toISOString(),
+        })
+        .eq("endpoint", endpoint);
+    }
+  }
 }
 
 export async function redeemBirthday(customerId: string): Promise<Customer> {

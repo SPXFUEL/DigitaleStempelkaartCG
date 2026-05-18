@@ -1,6 +1,7 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { addStamp, getCustomer } from "@/lib/store";
 import { isStaffAuthenticated } from "@/lib/session";
+import { firePushToCustomer } from "@/lib/push";
 
 export async function POST(req: NextRequest) {
   if (!(await isStaffAuthenticated())) {
@@ -26,6 +27,19 @@ export async function POST(req: NextRequest) {
 
   try {
     const customer = await addStamp(id);
+
+    // Fire-and-forget push als de kaart net vol is geworden.
+    // (addStamp throwt als rewardAvailable al true was, dus 'true' hier
+    // betekent altijd "net nu unlocked".)
+    if (customer.rewardAvailable) {
+      firePushToCustomer(customer.id, {
+        title: "🎉 Je 7e stempel zit erop!",
+        body: `${customer.name}, je volgende drankje is gratis bij Coffee Garden.`,
+        tag: "reward-unlocked",
+        url: "/profiel",
+      });
+    }
+
     return NextResponse.json({ customer });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Onbekende fout";
