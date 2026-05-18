@@ -41,6 +41,22 @@ export function getCustomerEvents(customerId: string): Promise<StampEvent[]> {
   return backend.getCustomerEvents(customerId);
 }
 
+export function listAllEvents(sinceIso?: string): Promise<StampEvent[]> {
+  return backend.listAllEvents(sinceIso);
+}
+
+export function countCustomers(): Promise<number> {
+  return backend.countCustomers();
+}
+
+export function listTopCustomers(limit: number): Promise<Customer[]> {
+  return backend.listTopCustomers(limit);
+}
+
+export function listCustomersWithBirthday(): Promise<Customer[]> {
+  return backend.listCustomersWithBirthday();
+}
+
 export function addStamp(customerId: string): Promise<Customer> {
   return backend.addStamp(customerId);
 }

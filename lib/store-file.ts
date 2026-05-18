@@ -119,6 +119,33 @@ export async function getCustomerEvents(
     .sort((a, b) => a.at.localeCompare(b.at));
 }
 
+export async function listAllEvents(sinceIso?: string): Promise<StampEvent[]> {
+  await ensureLoaded();
+  let events = memoryStore.events;
+  if (sinceIso) events = events.filter((e) => e.at >= sinceIso);
+  return [...events].sort((a, b) => a.at.localeCompare(b.at));
+}
+
+export async function countCustomers(): Promise<number> {
+  await ensureLoaded();
+  return Object.keys(memoryStore.customers).length;
+}
+
+export async function listTopCustomers(limit: number): Promise<Customer[]> {
+  await ensureLoaded();
+  return Object.values(memoryStore.customers)
+    .sort((a, b) => b.totalDrinks - a.totalDrinks)
+    .slice(0, limit)
+    .map(toCustomer);
+}
+
+export async function listCustomersWithBirthday(): Promise<Customer[]> {
+  await ensureLoaded();
+  return Object.values(memoryStore.customers)
+    .filter((r) => r.birthday)
+    .map(toCustomer);
+}
+
 export async function addStamp(customerId: string): Promise<Customer> {
   await ensureLoaded();
   const rec = memoryStore.customers[customerId];

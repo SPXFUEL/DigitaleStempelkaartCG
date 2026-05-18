@@ -108,6 +108,55 @@ export async function getCustomerEvents(
   }));
 }
 
+export async function listAllEvents(sinceIso?: string): Promise<StampEvent[]> {
+  const sb = client();
+  let q = sb
+    .from("stamp_events")
+    .select("customer_id, type, at")
+    .order("at", { ascending: true })
+    .limit(10000);
+  if (sinceIso) q = q.gte("at", sinceIso);
+  const { data, error } = await q.returns<EventRow[]>();
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((e) => ({
+    customerId: e.customer_id,
+    type: e.type,
+    at: e.at,
+  }));
+}
+
+export async function countCustomers(): Promise<number> {
+  const sb = client();
+  const { count, error } = await sb
+    .from("customers")
+    .select("*", { count: "exact", head: true });
+  if (error) throw new Error(error.message);
+  return count ?? 0;
+}
+
+export async function listTopCustomers(limit: number): Promise<Customer[]> {
+  const sb = client();
+  const { data, error } = await sb
+    .from("customers")
+    .select()
+    .order("total_drinks", { ascending: false })
+    .limit(limit)
+    .returns<CustomerRow[]>();
+  if (error) throw new Error(error.message);
+  return (data ?? []).map(fromDb);
+}
+
+export async function listCustomersWithBirthday(): Promise<Customer[]> {
+  const sb = client();
+  const { data, error } = await sb
+    .from("customers")
+    .select()
+    .not("birthday", "is", null)
+    .returns<CustomerRow[]>();
+  if (error) throw new Error(error.message);
+  return (data ?? []).map(fromDb);
+}
+
 export async function addStamp(customerId: string): Promise<Customer> {
   const sb = client();
   const { data: current, error: fetchErr } = await sb
