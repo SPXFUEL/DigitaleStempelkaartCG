@@ -4,9 +4,13 @@ import QRCode from "qrcode";
 import Header from "@/app/components/Header";
 import StampCard from "@/app/components/StampCard";
 import InstallPWA from "@/app/components/InstallPWA";
+import BirthdayBanner from "@/app/components/BirthdayBanner";
+import StatsCard from "@/app/components/StatsCard";
+import MilestoneCelebration from "@/app/components/MilestoneCelebration";
 import { getCustomerCookie } from "@/lib/session";
-import { getCustomer } from "@/lib/store";
-import { STAMPS_FOR_REWARD, BRAND_NAME } from "@/lib/constants";
+import { getCustomer, getCustomerEvents } from "@/lib/store";
+import { STAMPS_FOR_REWARD } from "@/lib/constants";
+import { computeStats } from "@/lib/stats";
 
 export const dynamic = "force-dynamic";
 
@@ -15,6 +19,9 @@ export default async function ProfielPage() {
   if (!id) redirect("/welkom");
   const customer = await getCustomer(id);
   if (!customer) redirect("/welkom");
+
+  const events = await getCustomerEvents(customer.id);
+  const stats = computeStats(customer, events);
 
   const qrPayload = `cg:cust:${customer.id}`;
   const qrDataUrl = await QRCode.toDataURL(qrPayload, {
@@ -29,6 +36,17 @@ export default async function ProfielPage() {
     <div className="flex flex-col flex-1">
       <Header subtitle={`Hoi ${customer.name}`} />
       <main className="flex-1 px-5 pb-12 max-w-md w-full mx-auto space-y-5">
+        <MilestoneCelebration
+          customerId={customer.id}
+          stamps={customer.stamps}
+          rewardAvailable={customer.rewardAvailable}
+          totalDrinks={customer.totalDrinks}
+          totalRewards={customer.totalRewards}
+          birthdayActive={customer.birthdayActive}
+        />
+
+        {customer.birthdayActive && <BirthdayBanner name={customer.name} />}
+
         <section className="cg-card p-6 text-center">
           <p className="text-sm" style={{ color: "var(--cg-ink-soft)" }}>
             Laat deze code aan de barista zien
@@ -77,25 +95,18 @@ export default async function ProfielPage() {
         ) : (
           <section className="cg-card p-5">
             <p className="text-sm" style={{ color: "var(--cg-ink-soft)" }}>
-              Nog <strong>{remaining} {remaining === 1 ? "stempel" : "stempels"}</strong> tot je gratis drankje.
-            </p>
-            <p className="text-xs mt-2" style={{ color: "var(--cg-ink-soft)" }}>
-              Totaal bij {BRAND_NAME}: {customer.totalDrinks} drankjes · gratis ingewisseld: {customer.totalRewards}
+              Nog{" "}
+              <strong>
+                {remaining} {remaining === 1 ? "stempel" : "stempels"}
+              </strong>{" "}
+              tot je gratis drankje.
             </p>
           </section>
         )}
 
-        <InstallPWA />
+        <StatsCard stats={stats} />
 
-        <section className="text-center pt-2">
-          <a
-            href="/api/wallet/apple/__placeholder__"
-            className="text-xs underline"
-            style={{ color: "var(--cg-ink-soft)" }}
-          >
-            Apple/Google Wallet komt eraan — zie README
-          </a>
-        </section>
+        <InstallPWA />
       </main>
     </div>
   );

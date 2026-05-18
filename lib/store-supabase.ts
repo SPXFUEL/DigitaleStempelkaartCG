@@ -1,6 +1,7 @@
 import { STAMPS_FOR_REWARD } from "./constants";
 import { getServiceClient } from "./supabase";
-import type { Customer } from "./types";
+import { isBirthdayActive, currentYearInAms } from "./birthday";
+import type { Customer, StampEvent } from "./types";
 
 type CustomerRow = {
   id: string;
@@ -10,8 +11,16 @@ type CustomerRow = {
   total_drinks: number;
   total_rewards: number;
   reward_available: boolean;
+  birthday: string | null;
+  birthday_redeemed_year: number | null;
   created_at: string;
   updated_at: string;
+};
+
+type EventRow = {
+  customer_id: string;
+  type: "stamp" | "redeem" | "birthday";
+  at: string;
 };
 
 function fromDb(row: CustomerRow): Customer {
@@ -23,6 +32,11 @@ function fromDb(row: CustomerRow): Customer {
     totalDrinks: row.total_drinks,
     totalRewards: row.total_rewards,
     rewardAvailable: row.reward_available,
+    birthday: row.birthday ?? undefined,
+    birthdayActive: isBirthdayActive({
+      birthday: row.birthday,
+      birthdayRedeemedYear: row.birthday_redeemed_year,
+    }),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
@@ -37,6 +51,7 @@ function client() {
 export async function createCustomer(input: {
   name: string;
   email?: string;
+  birthday?: string;
 }): Promise<Customer> {
   const sb = client();
   const { data, error } = await sb
@@ -44,6 +59,7 @@ export async function createCustomer(input: {
     .insert({
       name: input.name.trim(),
       email: input.email?.trim() || null,
+      birthday: input.birthday || null,
     })
     .select()
     .single<CustomerRow>();
@@ -74,9 +90,26 @@ export async function listCustomers(): Promise<Customer[]> {
   return (data ?? []).map(fromDb);
 }
 
+export async function getCustomerEvents(
+  customerId: string
+): Promise<StampEvent[]> {
+  const sb = client();
+  const { data, error } = await sb
+    .from("stamp_events")
+    .select("customer_id, type, at")
+    .eq("customer_id", customerId)
+    .order("at", { ascending: true })
+    .returns<EventRow[]>();
+  if (error) throw new Error(error.message);
+  return (data ?? []).map((e) => ({
+    customerId: e.customer_id,
+    type: e.type,
+    at: e.at,
+  }));
+}
+
 export async function addStamp(customerId: string): Promise<Customer> {
   const sb = client();
-  // 1. Fetch current state
   const { data: current, error: fetchErr } = await sb
     .from("customers")
     .select()
@@ -89,7 +122,6 @@ export async function addStamp(customerId: string): Promise<Customer> {
   }
 
   const nextStamps = current.stamps + 1;
-  // 2. Optimistic update: only succeeds if reward_available is still false
   const { data: updated, error: updateErr } = await sb
     .from("customers")
     .update({
@@ -103,7 +135,6 @@ export async function addStamp(customerId: string): Promise<Customer> {
     .single<CustomerRow>();
   if (updateErr) throw new Error(updateErr.message);
 
-  // 3. Audit event (best-effort, non-blocking on failure)
   await sb
     .from("stamp_events")
     .insert({
@@ -125,9 +156,7 @@ export async function redeemReward(customerId: string): Promise<Customer> {
     .maybeSingle<CustomerRow>();
   if (fetchErr) throw new Error(fetchErr.message);
   if (!current) throw new Error("Customer not found");
-  if (!current.reward_available) {
-    throw new Error("Geen reward beschikbaar");
-  }
+  if (!current.reward_available) throw new Error("Geen reward beschikbaar");
 
   const { data: updated, error: updateErr } = await sb
     .from("customers")
@@ -148,6 +177,48 @@ export async function redeemReward(customerId: string): Promise<Customer> {
     .insert({
       customer_id: customerId,
       type: "redeem",
+      at: updated.updated_at,
+    })
+    .then(() => {});
+
+  return fromDb(updated);
+}
+
+export async function redeemBirthday(customerId: string): Promise<Customer> {
+  const sb = client();
+  const { data: current, error: fetchErr } = await sb
+    .from("customers")
+    .select()
+    .eq("id", customerId)
+    .maybeSingle<CustomerRow>();
+  if (fetchErr) throw new Error(fetchErr.message);
+  if (!current) throw new Error("Customer not found");
+  if (
+    !isBirthdayActive({
+      birthday: current.birthday,
+      birthdayRedeemedYear: current.birthday_redeemed_year,
+    })
+  ) {
+    throw new Error("Geen verjaardags-tractatie beschikbaar");
+  }
+
+  const year = currentYearInAms();
+  const { data: updated, error: updateErr } = await sb
+    .from("customers")
+    .update({
+      birthday_redeemed_year: year,
+      total_drinks: current.total_drinks + 1,
+    })
+    .eq("id", customerId)
+    .select()
+    .single<CustomerRow>();
+  if (updateErr) throw new Error(updateErr.message);
+
+  await sb
+    .from("stamp_events")
+    .insert({
+      customer_id: customerId,
+      type: "birthday",
       at: updated.updated_at,
     })
     .then(() => {});

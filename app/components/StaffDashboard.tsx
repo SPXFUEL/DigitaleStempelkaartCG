@@ -139,6 +139,31 @@ export default function StaffDashboard({ recent }: { recent: Customer[] }) {
     }
   }
 
+  async function handleRedeemBirthday() {
+    if (!selected) return;
+    setBusy(true);
+    try {
+      const res = await fetch("/api/redeem-birthday", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ customerId: selected.id }),
+      });
+      const data = (await res.json()) as { customer?: Customer; error?: string };
+      if (!res.ok || !data.customer) {
+        flash({ kind: "err", text: data.error ?? "Inwisselen mislukt" });
+        return;
+      }
+      setSelected(data.customer);
+      flash({
+        kind: "ok",
+        text: `🎂 Verjaardags-tractatie voor ${data.customer.name}!`,
+      });
+      router.refresh();
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function handleLogout() {
     await fetch("/api/staff/logout", { method: "POST" });
     router.push("/staff/login");
@@ -232,10 +257,21 @@ export default function StaffDashboard({ recent }: { recent: Customer[] }) {
           <div className="flex items-center justify-between">
             <div>
               <h2
-                className="text-lg font-semibold"
+                className="text-lg font-semibold flex items-center gap-2"
                 style={{ color: "var(--cg-coffee-dark)" }}
               >
                 {selected.name}
+                {selected.birthdayActive && (
+                  <span
+                    className="text-xs font-semibold px-2 py-0.5 rounded-full"
+                    style={{
+                      background: "var(--cg-cream)",
+                      color: "var(--cg-coffee-dark)",
+                    }}
+                  >
+                    🎂 Jarig vandaag
+                  </span>
+                )}
               </h2>
               <p
                 className="text-xs font-mono"
@@ -265,6 +301,17 @@ export default function StaffDashboard({ recent }: { recent: Customer[] }) {
           </div>
 
           <div className="mt-4 grid grid-cols-1 gap-2">
+            {selected.birthdayActive && (
+              <button
+                type="button"
+                className="cg-btn-primary"
+                disabled={busy}
+                onClick={handleRedeemBirthday}
+                style={{ background: "#c97a3b" }}
+              >
+                {busy ? "Bezig…" : "🎂 Verjaardags-tractatie inwisselen"}
+              </button>
+            )}
             {selected.rewardAvailable ? (
               <button
                 type="button"
@@ -320,13 +367,17 @@ export default function StaffDashboard({ recent }: { recent: Customer[] }) {
             {recent.map((c) => (
               <li key={c.id} className="py-2.5 flex items-center justify-between">
                 <div>
-                  <div className="text-sm font-medium">{c.name}</div>
+                  <div className="text-sm font-medium flex items-center gap-1.5">
+                    {c.name}
+                    {c.birthdayActive && <span aria-label="Jarig vandaag">🎂</span>}
+                  </div>
                   <div
                     className="text-xs"
                     style={{ color: "var(--cg-ink-soft)" }}
                   >
                     {c.stamps}/{STAMPS_FOR_REWARD}
                     {c.rewardAvailable && " · gratis drankje klaar"}
+                    {c.birthdayActive && " · 🎂 verjaardags-tractatie"}
                   </div>
                 </div>
                 <button

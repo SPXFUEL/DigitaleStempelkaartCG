@@ -2,7 +2,13 @@ import { promises as fs } from "node:fs";
 import path from "node:path";
 import { randomUUID } from "node:crypto";
 import { STAMPS_FOR_REWARD } from "./constants";
-import type { Customer, StoreShape } from "./types";
+import { isBirthdayActive, currentYearInAms } from "./birthday";
+import type {
+  Customer,
+  CustomerRecord,
+  StampEvent,
+  StoreShape,
+} from "./types";
 
 const DATA_DIR = path.join(process.cwd(), "data");
 const STORE_FILE = path.join(DATA_DIR, "store.json");
@@ -48,16 +54,37 @@ function nowIso(): string {
   return new Date().toISOString();
 }
 
+function toCustomer(r: CustomerRecord): Customer {
+  return {
+    id: r.id,
+    name: r.name,
+    email: r.email,
+    stamps: r.stamps,
+    totalDrinks: r.totalDrinks,
+    totalRewards: r.totalRewards,
+    rewardAvailable: r.rewardAvailable,
+    birthday: r.birthday,
+    birthdayActive: isBirthdayActive({
+      birthday: r.birthday,
+      birthdayRedeemedYear: r.birthdayRedeemedYear,
+    }),
+    createdAt: r.createdAt,
+    updatedAt: r.updatedAt,
+  };
+}
+
 export async function createCustomer(input: {
   name: string;
   email?: string;
+  birthday?: string;
 }): Promise<Customer> {
   await ensureLoaded();
   const id = randomUUID();
-  const customer: Customer = {
+  const rec: CustomerRecord = {
     id,
     name: input.name.trim(),
     email: input.email?.trim() || undefined,
+    birthday: input.birthday || undefined,
     stamps: 0,
     totalDrinks: 0,
     totalRewards: 0,
@@ -65,58 +92,94 @@ export async function createCustomer(input: {
     createdAt: nowIso(),
     updatedAt: nowIso(),
   };
-  memoryStore.customers[id] = customer;
+  memoryStore.customers[id] = rec;
   await persist();
-  return customer;
+  return toCustomer(rec);
 }
 
 export async function getCustomer(id: string): Promise<Customer | null> {
   await ensureLoaded();
-  return memoryStore.customers[id] ?? null;
+  const rec = memoryStore.customers[id];
+  return rec ? toCustomer(rec) : null;
 }
 
 export async function listCustomers(): Promise<Customer[]> {
   await ensureLoaded();
-  return Object.values(memoryStore.customers).sort((a, b) =>
-    b.updatedAt.localeCompare(a.updatedAt)
-  );
+  return Object.values(memoryStore.customers)
+    .sort((a, b) => b.updatedAt.localeCompare(a.updatedAt))
+    .map(toCustomer);
+}
+
+export async function getCustomerEvents(
+  customerId: string
+): Promise<StampEvent[]> {
+  await ensureLoaded();
+  return memoryStore.events
+    .filter((e) => e.customerId === customerId)
+    .sort((a, b) => a.at.localeCompare(b.at));
 }
 
 export async function addStamp(customerId: string): Promise<Customer> {
   await ensureLoaded();
-  const customer = memoryStore.customers[customerId];
-  if (!customer) {
-    throw new Error("Customer not found");
-  }
-  if (customer.rewardAvailable) {
+  const rec = memoryStore.customers[customerId];
+  if (!rec) throw new Error("Customer not found");
+  if (rec.rewardAvailable) {
     throw new Error("Reward beschikbaar — eerst inwisselen");
   }
-  customer.stamps += 1;
-  customer.totalDrinks += 1;
-  customer.updatedAt = nowIso();
-  if (customer.stamps >= STAMPS_FOR_REWARD) {
-    customer.rewardAvailable = true;
+  rec.stamps += 1;
+  rec.totalDrinks += 1;
+  rec.updatedAt = nowIso();
+  if (rec.stamps >= STAMPS_FOR_REWARD) {
+    rec.rewardAvailable = true;
   }
-  memoryStore.events.push({ customerId, type: "stamp", at: customer.updatedAt });
+  memoryStore.events.push({
+    customerId,
+    type: "stamp",
+    at: rec.updatedAt,
+  });
   await persist();
-  return customer;
+  return toCustomer(rec);
 }
 
 export async function redeemReward(customerId: string): Promise<Customer> {
   await ensureLoaded();
-  const customer = memoryStore.customers[customerId];
-  if (!customer) {
-    throw new Error("Customer not found");
-  }
-  if (!customer.rewardAvailable) {
-    throw new Error("Geen reward beschikbaar");
-  }
-  customer.stamps = 0;
-  customer.rewardAvailable = false;
-  customer.totalRewards += 1;
-  customer.totalDrinks += 1;
-  customer.updatedAt = nowIso();
-  memoryStore.events.push({ customerId, type: "redeem", at: customer.updatedAt });
+  const rec = memoryStore.customers[customerId];
+  if (!rec) throw new Error("Customer not found");
+  if (!rec.rewardAvailable) throw new Error("Geen reward beschikbaar");
+  rec.stamps = 0;
+  rec.rewardAvailable = false;
+  rec.totalRewards += 1;
+  rec.totalDrinks += 1;
+  rec.updatedAt = nowIso();
+  memoryStore.events.push({
+    customerId,
+    type: "redeem",
+    at: rec.updatedAt,
+  });
   await persist();
-  return customer;
+  return toCustomer(rec);
+}
+
+export async function redeemBirthday(customerId: string): Promise<Customer> {
+  await ensureLoaded();
+  const rec = memoryStore.customers[customerId];
+  if (!rec) throw new Error("Customer not found");
+  if (
+    !isBirthdayActive({
+      birthday: rec.birthday,
+      birthdayRedeemedYear: rec.birthdayRedeemedYear,
+    })
+  ) {
+    throw new Error("Geen verjaardags-tractatie beschikbaar");
+  }
+  rec.birthdayRedeemedYear = currentYearInAms();
+  rec.totalDrinks += 1;
+  rec.updatedAt = nowIso();
+  memoryStore.events.push({
+    customerId,
+    type: "birthday",
+    at: rec.updatedAt,
+  });
+  await persist();
+  return toCustomer(rec);
 }

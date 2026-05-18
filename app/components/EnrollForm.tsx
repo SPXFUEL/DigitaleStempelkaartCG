@@ -7,6 +7,7 @@ export default function EnrollForm() {
   const router = useRouter();
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
+  const [birthday, setBirthday] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
@@ -18,7 +19,11 @@ export default function EnrollForm() {
       const res = await fetch("/api/enroll", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ name, email: email || undefined }),
+        body: JSON.stringify({
+          name,
+          email: email || undefined,
+          birthday: birthday || undefined,
+        }),
       });
       const data = (await res.json()) as { error?: string };
       if (!res.ok) {
@@ -33,6 +38,9 @@ export default function EnrollForm() {
       setBusy(false);
     }
   }
+
+  // Max date: vandaag (om belachelijke toekomst-datums te voorkomen)
+  const today = new Date().toISOString().slice(0, 10);
 
   return (
     <form onSubmit={handleSubmit} className="space-y-3">
@@ -68,6 +76,23 @@ export default function EnrollForm() {
           onChange={(e) => setEmail(e.target.value)}
           placeholder="zodat we je kunnen herinneren"
           autoComplete="email"
+        />
+      </label>
+      <label className="block">
+        <span
+          className="block text-sm font-medium mb-1.5"
+          style={{ color: "var(--cg-ink-soft)" }}
+        >
+          Geboortedatum 🎂{" "}
+          <span className="opacity-60">(optioneel — voor een tractatie)</span>
+        </span>
+        <input
+          type="date"
+          className="cg-input"
+          value={birthday}
+          onChange={(e) => setBirthday(e.target.value)}
+          max={today}
+          min="1900-01-01"
         />
       </label>
       {error && (
