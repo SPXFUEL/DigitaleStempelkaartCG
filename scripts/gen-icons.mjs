@@ -22,7 +22,10 @@ async function main() {
   for (const t of targets) {
     const out = path.join(outDir, t.name);
     await sharp(src)
-      .resize(t.size, t.size, { fit: "contain", background: { r: 247, g: 233, b: 208, alpha: 1 } })
+      .resize(t.size, t.size, {
+        fit: "contain",
+        background: { r: 0, g: 0, b: 0, alpha: 0 }, // transparent fill
+      })
       .png({ quality: 90, compressionLevel: 9 })
       .toFile(out);
     const stat = await fs.stat(out);

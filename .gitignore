@@ -45,4 +45,7 @@ next-env.d.ts
 /data/store.json
 /data/*.json
 
+# bg-strip backup van de logo PNG (lokaal alleen, bron staat al in git history)
+/public/icons/logo.original.png
+
 .vercel
