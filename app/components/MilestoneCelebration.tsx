@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useRef } from "react";
-import { STAMPS_FOR_REWARD } from "@/lib/constants";
 
 interface Props {
   customerId: string;

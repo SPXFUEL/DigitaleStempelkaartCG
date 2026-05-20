@@ -1,5 +1,4 @@
 import { redirect } from "next/navigation";
-import Image from "next/image";
 import QRCode from "qrcode";
 import Header from "@/app/components/Header";
 import StampCard from "@/app/components/StampCard";
@@ -8,10 +7,17 @@ import BirthdayBanner from "@/app/components/BirthdayBanner";
 import StatsCard from "@/app/components/StatsCard";
 import MilestoneCelebration from "@/app/components/MilestoneCelebration";
 import PushToggle from "@/app/components/PushToggle";
+import RotatingQR from "@/app/components/RotatingQR";
+import VisitHistory from "@/app/components/VisitHistory";
+import ReferralCard from "@/app/components/ReferralCard";
+import DeleteAccountButton from "@/app/components/DeleteAccountButton";
+import EmailVerifyBanner from "@/app/components/EmailVerifyBanner";
 import { getCustomerCookie } from "@/lib/session";
 import { getCustomer, getCustomerEvents } from "@/lib/store";
 import { STAMPS_FOR_REWARD } from "@/lib/constants";
 import { computeStats } from "@/lib/stats";
+import { signQrToken } from "@/lib/hmac";
+import { config } from "@/lib/config";
 
 export const dynamic = "force-dynamic";
 
@@ -24,11 +30,14 @@ export default async function ProfielPage() {
   const events = await getCustomerEvents(customer.id);
   const stats = computeStats(customer, events);
 
-  const qrPayload = `cg:cust:${customer.id}`;
-  const qrDataUrl = await QRCode.toDataURL(qrPayload, {
+  // Eerste QR server-side, zodat de pagina meteen iets toont. De client
+  // refreshet 'm vervolgens elke 10s via /api/qr-token.
+  const initialToken = signQrToken(customer.id);
+  const qrDataUrl = await QRCode.toDataURL(initialToken, {
     width: 480,
     margin: 1,
     color: { dark: "#2a1a10", light: "#ffffff" },
+    errorCorrectionLevel: "M",
   });
 
   const remaining = Math.max(0, STAMPS_FOR_REWARD - customer.stamps);
@@ -46,27 +55,35 @@ export default async function ProfielPage() {
           birthdayActive={customer.birthdayActive}
         />
 
+        {customer.email && !customer.emailVerified && (
+          <EmailVerifyBanner email={customer.email} />
+        )}
+
         {customer.birthdayActive && <BirthdayBanner name={customer.name} />}
 
         <section className="cg-card p-6 text-center">
           <p className="text-sm" style={{ color: "var(--cg-ink-soft)" }}>
             Laat deze code aan de barista zien
           </p>
-          <div
-            className="mt-3 mx-auto rounded-2xl p-3 inline-block"
-            style={{ background: "#fff", border: "1px solid var(--cg-line)" }}
-          >
-            <Image
-              src={qrDataUrl}
-              alt={`QR-code voor ${customer.name}`}
-              width={240}
-              height={240}
-              unoptimized
-              priority
+          <div className="mt-3">
+            <RotatingQR
+              initialDataUrl={qrDataUrl}
+              initialToken={initialToken}
+              refreshMs={Math.min(10_000, (config.qrTokenTtlSec - 5) * 1000)}
             />
           </div>
           <p
-            className="mt-3 text-xs font-mono"
+            className="mt-3 text-[11px]"
+            style={{ color: "var(--cg-ink-soft)" }}
+          >
+            Code roteert elke{" "}
+            {Math.round(
+              Math.min(10_000, (config.qrTokenTtlSec - 5) * 1000) / 1000
+            )}
+            s — altijd vers.
+          </p>
+          <p
+            className="mt-1 text-xs font-mono"
             style={{ color: "var(--cg-ink-soft)" }}
           >
             ID: {customer.id.slice(0, 8)}
@@ -107,9 +124,18 @@ export default async function ProfielPage() {
 
         <StatsCard stats={stats} />
 
+        <ReferralCard
+          customerId={customer.id}
+          referralsCount={customer.referralsCount ?? 0}
+        />
+
+        <VisitHistory events={events} />
+
         <InstallPWA />
 
         <PushToggle />
+
+        <DeleteAccountButton />
       </main>
     </div>
   );

@@ -1,6 +1,8 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { redeemBirthday, getCustomer } from "@/lib/store";
-import { isStaffAuthenticated } from "@/lib/session";
+import { isStaffAuthenticated, getStaffUserId } from "@/lib/session";
+import { checkOrigin } from "@/lib/origin";
+import { record as recordAudit } from "@/lib/audit";
 
 export async function POST(req: NextRequest) {
   if (!(await isStaffAuthenticated())) {
@@ -8,6 +10,11 @@ export async function POST(req: NextRequest) {
       { error: "Niet ingelogd als barista" },
       { status: 401 }
     );
+  }
+
+  const originErr = checkOrigin(req);
+  if (originErr) {
+    return NextResponse.json({ error: "Verboden" }, { status: 403 });
   }
 
   let body: { customerId?: string };
@@ -27,8 +34,16 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Klant niet gevonden" }, { status: 404 });
   }
 
+  const staffUserId = await getStaffUserId();
+
   try {
-    const customer = await redeemBirthday(id);
+    const customer = await redeemBirthday(id, { staffUserId });
+    await recordAudit({
+      action: "redeem_birthday",
+      customerId: id,
+      staffUserId,
+      req,
+    });
     return NextResponse.json({ customer });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "Onbekende fout";

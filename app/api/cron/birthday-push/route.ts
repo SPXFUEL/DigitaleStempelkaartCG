@@ -1,7 +1,6 @@
 import { NextResponse, type NextRequest } from "next/server";
 import { listCustomersWithBirthday } from "@/lib/store";
 import { sendPushToCustomer } from "@/lib/push";
-import { isBirthdayActive } from "@/lib/birthday";
 
 /**
  * Vercel cron — dagelijks 07:00 UTC (= 08:00 NL winter / 09:00 NL zomer).

@@ -9,7 +9,14 @@
  */
 
 import { isSupabaseConfigured } from "./supabase";
-import type { Customer, PushSubscriptionRecord, StampEvent } from "./types";
+import type {
+  AuditLogEntry,
+  Customer,
+  EmailVerificationToken,
+  PushSubscriptionRecord,
+  StaffUser,
+  StampEvent,
+} from "./types";
 
 import * as fileStore from "./store-file";
 import * as supaStore from "./store-supabase";
@@ -25,6 +32,8 @@ export function createCustomer(input: {
   name: string;
   email?: string;
   birthday?: string;
+  referredBy?: string;
+  emailVerified?: boolean;
 }): Promise<Customer> {
   return backend.createCustomer(input);
 }
@@ -61,16 +70,47 @@ export function listCustomersWithRewardAvailable(): Promise<Customer[]> {
   return backend.listCustomersWithRewardAvailable();
 }
 
-export function addStamp(customerId: string): Promise<Customer> {
-  return backend.addStamp(customerId);
+export function addStamp(
+  customerId: string,
+  opts?: { type?: StampEvent["type"]; staffUserId?: string | null }
+): Promise<Customer> {
+  return backend.addStamp(customerId, opts);
 }
 
-export function redeemReward(customerId: string): Promise<Customer> {
-  return backend.redeemReward(customerId);
+export function undoLastStamp(
+  customerId: string,
+  withinSec: number
+): Promise<Customer> {
+  return backend.undoLastStamp(customerId, withinSec);
 }
 
-export function redeemBirthday(customerId: string): Promise<Customer> {
-  return backend.redeemBirthday(customerId);
+export function redeemReward(
+  customerId: string,
+  opts?: { staffUserId?: string | null }
+): Promise<Customer> {
+  return backend.redeemReward(customerId, opts);
+}
+
+export function redeemBirthday(
+  customerId: string,
+  opts?: { staffUserId?: string | null }
+): Promise<Customer> {
+  return backend.redeemBirthday(customerId, opts);
+}
+
+export function deleteCustomer(customerId: string): Promise<void> {
+  return backend.deleteCustomer(customerId);
+}
+
+export function setCustomerEmailVerified(
+  customerId: string,
+  verified: boolean
+): Promise<void> {
+  return backend.setCustomerEmailVerified(customerId, verified);
+}
+
+export function listInactiveCustomers(cutoffIso: string): Promise<Customer[]> {
+  return backend.listInactiveCustomers(cutoffIso);
 }
 
 export function savePushSubscription(
@@ -94,4 +134,61 @@ export function markPushSubscriptionFailure(
   remove: boolean
 ): Promise<void> {
   return backend.markPushSubscriptionFailure(endpoint, remove);
+}
+
+// --- Staff users ---
+
+export function listStaffUsers(): Promise<StaffUser[]> {
+  return backend.listStaffUsers();
+}
+
+export function getStaffUser(id: string): Promise<StaffUser | null> {
+  return backend.getStaffUser(id);
+}
+
+export function createStaffUser(input: {
+  name: string;
+  role: "barista" | "admin";
+  pinHash: string;
+}): Promise<StaffUser> {
+  return backend.createStaffUser(input);
+}
+
+export function deactivateStaffUser(id: string): Promise<void> {
+  return backend.deactivateStaffUser(id);
+}
+
+export function touchStaffLogin(id: string): Promise<void> {
+  return backend.touchStaffLogin(id);
+}
+
+// --- Audit log ---
+
+export function appendAudit(entry: AuditLogEntry): Promise<void> {
+  return backend.appendAudit(entry);
+}
+
+export function listAudit(opts?: {
+  limit?: number;
+  sinceIso?: string;
+}): Promise<AuditLogEntry[]> {
+  return backend.listAudit(opts);
+}
+
+// --- E-mail verification tokens ---
+
+export function createEmailToken(token: EmailVerificationToken): Promise<void> {
+  return backend.createEmailToken(token);
+}
+
+export function consumeEmailToken(
+  token: string
+): Promise<EmailVerificationToken | null> {
+  return backend.consumeEmailToken(token);
+}
+
+// --- Referral helpers ---
+
+export function incrementReferralsCount(customerId: string): Promise<void> {
+  return backend.incrementReferralsCount(customerId);
 }

@@ -3,7 +3,8 @@
 // Usage: node scripts/e2e-test.mjs
 import { createClient } from "@supabase/supabase-js";
 
-const BASE = process.env.E2E_BASE || "https://digitalestempelkaartcg.vercel.app";
+const BASE =
+  process.env.E2E_BASE || "https://digitalestempelkaartcg.vercel.app";
 const STAFF_PIN = process.env.E2E_STAFF_PIN || "2581";
 const SUPABASE_URL = process.env.NEXT_PUBLIC_SUPABASE_URL;
 const SUPABASE_KEY = process.env.SUPABASE_SERVICE_ROLE_KEY;
@@ -49,7 +50,9 @@ async function call(jar, path, init = {}) {
   let json = null;
   try {
     json = JSON.parse(text);
-  } catch {}
+  } catch {
+    /* response was not JSON — that's fine, we'll return text */
+  }
   return { status: res.status, body: json ?? text };
 }
 
@@ -137,7 +140,9 @@ function fail(msg, extra) {
   } else {
     const c = enroll.body.customer;
     cleanupIds.push(c.id);
-    console.log(`  ✓ Enroll: birthday=${c.birthday}, birthdayActive=${c.birthdayActive}`);
+    console.log(
+      `  ✓ Enroll: birthday=${c.birthday}, birthdayActive=${c.birthdayActive}`
+    );
     if (c.birthday !== birthday) fail("birthday niet opgeslagen", c);
     if (!c.birthdayActive) fail("birthdayActive zou true moeten zijn", c);
 
@@ -166,7 +171,8 @@ function fail(msg, extra) {
       console.log(
         `  ✓ Birthday redeem: birthdayActive=${updated.birthdayActive}, totalDrinks=${updated.totalDrinks}`
       );
-      if (updated.birthdayActive) fail("birthdayActive moet false zijn na redeem", updated);
+      if (updated.birthdayActive)
+        fail("birthdayActive moet false zijn na redeem", updated);
       if (updated.totalDrinks !== 1) fail("totalDrinks moet 1 zijn", updated);
 
       // Tweede poging zou moeten falen
@@ -188,7 +194,8 @@ function fail(msg, extra) {
       .eq("customer_id", c.id);
     const types = events?.map((e) => e.type).join(",") ?? "";
     console.log(`  ✓ Event log: ${types}`);
-    if (!types.includes("birthday")) fail("birthday event niet opgeslagen", events);
+    if (!types.includes("birthday"))
+      fail("birthday event niet opgeslagen", events);
   }
 }
 
